@@ -6,6 +6,7 @@
 
 import sys
 import random
+import getopt
 
 #+
 # The text database
@@ -418,7 +419,8 @@ words = \
             ],
     }
 
-nr_sentences = 3
+sentences_per_paragraph = 3
+nr_paragraphs = 1
 split_sentence_prob = 0.75
 
 #+
@@ -436,7 +438,7 @@ def capitalize_first(s) :
         s[0].upper() + s[1:]
 #end capitalize_first
 
-def create_ipsum() :
+def create_ipsum(nr_sentences) :
     result = ""
     last_was_split = False
     for i in range(nr_sentences) :
@@ -468,5 +470,35 @@ def create_ipsum() :
 # Mainline
 #-
 
-sys.stdout.write(create_ipsum())
-sys.stdout.write("\n")
+opts, args = getopt.getopt \
+  (
+    sys.argv[1:],
+    "n:p:s:",
+    ()
+  )
+for keyword, value in opts :
+    if keyword == "-n" :
+        sentences_per_paragraph = int(value)
+        if sentences_per_paragraph < 1 :
+            raise getopt.GetoptError("must have at least one sentence per paragraph")
+        #end if
+    elif keyword == "-p" :
+        nr_paragraphs = int(value)
+        if sentences_per_paragraph < 1 :
+            raise getopt.GetoptError("must have at least one paragraph")
+        #end if
+    elif keyword == "-s" :
+        split_sentence_prob = float(value)
+        if split_sentence_prob < 0 or split_sentence_prob > 1 :
+            raise getopt.GetoptError("probability of split sentence must be in [0, 1]")
+        #end if
+    #end if
+#end for
+if len(args) != 0 :
+    raise getopt.GetoptError("no args expected")
+#end if
+
+for i in range(nr_paragraphs) :
+    sys.stdout.write(create_ipsum(sentences_per_paragraph))
+    sys.stdout.write("\n\n")
+#end for
