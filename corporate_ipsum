@@ -13,6 +13,14 @@
 #          If omitted, defaults to 1.
 #     -s «probability of splitting sentence»
 #          Must be in range [0, 1]. If omitted, defaults to 0.75.
+#     --adjectives==«mean number of consecutive adjectives»
+#          If specified, then some random number of adjectives is
+#          generated in each phrase, clustered around the specified
+#          mean with a Poisson distribution.
+#     --nouns=«mean number of consecutive nouns»
+#          If specified, then some random number of nouns is
+#          generated in each phrase, clustered around the specified
+#          mean with a Poisson distribution.
 #
 # Note that each paragraph is generated as one long line. If you want
 # more readable output on a terminal, try this:
@@ -27,8 +35,35 @@
 #-
 
 import sys
+import math
 import random
 import getopt
+
+#+
+# Useful stuff
+#-
+
+def rand_poisson(λ) :
+    "returns a random non-negative integer variable following" \
+    " a Poisson distribution with parameter λ."
+    prob = random.random()
+    k = 0
+    exp = math.exp(- λ)
+    pow = 1
+    denom = 1
+    p = 0
+    while True :
+        pow *= λ
+        denom *= k + 1
+        old_p = p
+        p += pow * exp / denom
+        if p > prob or p == old_p :
+            break
+        k += 1
+    #end while
+    return \
+        k
+#end rand_poisson
 
 #+
 # The text database
@@ -444,6 +479,8 @@ words = \
 sentences_per_paragraph = 3
 nr_paragraphs = 1
 split_sentence_prob = 0.75
+mean_nr_adjectives = None
+mean_nr_nouns = None
 
 #+
 # Generation algorithm
@@ -467,15 +504,26 @@ def create_ipsum(nr_sentences) :
         is_full_sentence = random.random() < split_sentence_prob
         adverb = get_word("adverbs")
         verb = get_word("verbs")
-        adjective = get_word("adjectives")
-        noun = get_word("nouns")
+        if mean_nr_adjectives != None :
+            adjectives = tuple(get_word("adjectives") for i in range(rand_poisson(mean_nr_adjectives - 1) + 1))
+        else :
+            adjectives = (get_word("adjectives"),)
+        #end if
+        if mean_nr_nouns != None :
+            nouns = tuple(get_word("nouns") for i in range(rand_poisson(mean_nr_nouns - 1) + 1))
+            if len(nouns) > 1 :
+                nouns = sum(((nouns[i] + ",",) for i in range(len(nouns) - 2)), ()) + (nouns[-2], "and", nouns[-1])
+            #end if
+        else :
+            nouns = (get_word("nouns"),)
+        #end if
         if not last_was_split :
             adverb = capitalize_first(adverb)
             if len(result) != 0 :
                 result += " "
             #end if
         #end if
-        result += " ".join((adverb, verb, adjective, noun))
+        result += " ".join((adverb, verb) + adjectives + nouns)
         last_was_split = is_full_sentence and i != nr_sentences - 1
         if last_was_split :
             transitional = get_word("transitionals")
@@ -498,14 +546,18 @@ opts, args = getopt.getopt \
   (
     sys.argv[1:],
     "n:p:s:",
-    ["seed="]
+    ["adjectives=", "nouns=", "seed="]
   )
 for keyword, value in opts :
-    if keyword == "-n" :
+    if keyword == "--adjectives" :
+        mean_nr_adjectives = int(value)
+    elif keyword == "-n" :
         sentences_per_paragraph = int(value)
         if sentences_per_paragraph < 1 :
             raise getopt.GetoptError("must have at least one sentence per paragraph")
         #end if
+    elif keyword == "--nouns" :
+        mean_nr_nouns = int(value)
     elif keyword == "-p" :
         nr_paragraphs = int(value)
         if sentences_per_paragraph < 1 :
