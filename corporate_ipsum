@@ -1,7 +1,29 @@
 #!/usr/bin/python3
 #+
 # Python version of this <https://github.com/npmgod/Corporate-Ipsum>
-# corporatese travesty generator.
+# corporatese travesty generator. Invoke as follows:
+#
+#     corporate_ipsum «options»
+#
+# where valid «options» (all optional) are as follows:
+#
+#     -n «sentences_per_paragraph»
+#          If omitted, defaults to 3.
+#     -p «number of paragraphs»
+#          If omitted, defaults to 1.
+#     -s «probability of splitting sentence»
+#          Must be in range [0, 1]. If omitted, defaults to 0.75.
+#
+# Note that each paragraph is generated as one long line. If you want
+# more readable output on a terminal, try this:
+#
+#     corporate_ipsum «options» | fold -s
+#
+# The double-spacing between paragraphs can also be interpreted as
+# Markdown. For example, to nicely format the output as a PDF file,
+# try something like
+#
+#     corporate_ipsum «options» | pandoc -f markdown -o out.pdf
 #-
 
 import sys
