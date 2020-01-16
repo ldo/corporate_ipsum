@@ -38,7 +38,8 @@ import sys
 import math
 import random
 from decimal import \
-    Decimal
+    Decimal, \
+    Context as DecimalContext
 import getopt
 
 #+
@@ -56,6 +57,7 @@ def rand_poisson(λ) :
     # Me, I’m just going to try the naïve algorithm with the
     # arbitrary-precision decimal module.
     nr_digits = λ * 10 # pessimistic, I know
+    ctx = DecimalContext(prec = nr_digits)
     prob = Decimal \
       (
             "0."
@@ -67,11 +69,11 @@ def rand_poisson(λ) :
               )
       )
     k = 0
-    exp = Decimal.from_float(- λ).exp()
-    d_λ = Decimal.from_float(λ)
-    pow = Decimal.from_float(1)
-    denom = Decimal.from_float(1)
-    p = Decimal.from_float(0)
+    exp = Decimal(- λ, ctx).exp()
+    d_λ = Decimal(λ, ctx)
+    pow = Decimal(1, ctx)
+    denom = Decimal(1, ctx)
+    p = Decimal(0, ctx)
     while True :
         pow *= d_λ
         denom *= k + 1
