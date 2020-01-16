@@ -37,6 +37,8 @@
 import sys
 import math
 import random
+from decimal import \
+    Decimal
 import getopt
 
 #+
@@ -46,14 +48,32 @@ import getopt
 def rand_poisson(λ) :
     "returns a random non-negative integer variable following" \
     " a Poisson distribution with parameter λ."
-    prob = random.random()
+    # Note: naïve algorithm using double-precision floats has
+    # bad rounding errors. Looking at the source code for Numpy
+    # (numpy/random/src/distributions/distributions.c), it does
+    # things quite differently, including something called the
+    # “transformed rejection method” for values of λ beyond 10.
+    # Me, I’m just going to try the naïve algorithm with the
+    # arbitrary-precision decimal module.
+    nr_digits = λ * 10 # pessimistic, I know
+    prob = Decimal \
+      (
+            "0."
+        +
+            "".join
+              (
+                random.choice(list(chr(ord("0") + j) for j in range(10)))
+                for i in range(nr_digits)
+              )
+      )
     k = 0
-    exp = math.exp(- λ)
-    pow = 1
-    denom = 1
-    p = 0
+    exp = Decimal.from_float(- λ).exp()
+    d_λ = Decimal.from_float(λ)
+    pow = Decimal.from_float(1)
+    denom = Decimal.from_float(1)
+    p = Decimal.from_float(0)
     while True :
-        pow *= λ
+        pow *= d_λ
         denom *= k + 1
         old_p = p
         p += pow * exp / denom
