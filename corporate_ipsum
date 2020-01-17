@@ -7,11 +7,17 @@
 #
 # where valid «options» (all optional) are as follows:
 #
-#     -n «sentences_per_paragraph»
+#     -n «clauses_per_paragraph»
+#          The number of clauses to generate per paragraph.
+#          Clauses are randomly grouped, one or more to a sentence,
+#          based on the -s value (below).
 #          If omitted, defaults to 3.
 #     -p «number of paragraphs»
+#          The number of paragraphs to generate.
 #          If omitted, defaults to 1.
 #     -s «probability of splitting sentence»
+#          The probability that a clause will be joined onto another
+#          clause, instead of making up a sentence on its own.
 #          Must be in range [0, 1]. If omitted, defaults to 0.75.
 #     --adjectives==«mean number of consecutive adjectives»
 #          If specified, then some random number of adjectives is
@@ -499,7 +505,7 @@ words = \
             ],
     }
 
-sentences_per_paragraph = 3
+clauses_per_paragraph = 3
 nr_paragraphs = 1
 split_sentence_prob = 0.75
 mean_nr_adjectives = None
@@ -520,22 +526,36 @@ def capitalize_first(s) :
         s[0].upper() + s[1:]
 #end capitalize_first
 
-def create_ipsum(nr_sentences) :
+def create_ipsum(nr_clauses) :
     result = ""
     last_was_split = False
-    for i in range(nr_sentences) :
+    for i in range(nr_clauses) :
         is_full_sentence = random.random() < split_sentence_prob
         adverb = get_word("adverbs")
         verb = get_word("verbs")
         if mean_nr_adjectives != None :
-            adjectives = tuple(get_word("adjectives") for i in range(rand_poisson(mean_nr_adjectives - 1) + 1))
+            adjectives = tuple \
+              (
+                get_word("adjectives")
+                for i in range(rand_poisson(mean_nr_adjectives - 1) + 1)
+              )
         else :
             adjectives = (get_word("adjectives"),)
         #end if
         if mean_nr_nouns != None :
-            nouns = tuple(get_word("nouns") for i in range(rand_poisson(mean_nr_nouns - 1) + 1))
+            nouns = tuple \
+              (
+                get_word("nouns")
+                for i in range(rand_poisson(mean_nr_nouns - 1) + 1)
+                  # ensure len(nouns) > 0
+              )
             if len(nouns) > 1 :
-                nouns = sum(((nouns[i] + ",",) for i in range(len(nouns) - 2)), ()) + (nouns[-2], "and", nouns[-1])
+                nouns = \
+                    (
+                        sum(((nouns[i] + ",",) for i in range(len(nouns) - 2)), ())
+                    +
+                        (nouns[-2], "and", nouns[-1])
+                    )
             #end if
         else :
             nouns = (get_word("nouns"),)
@@ -547,7 +567,7 @@ def create_ipsum(nr_sentences) :
             #end if
         #end if
         result += " ".join((adverb, verb) + adjectives + nouns)
-        last_was_split = is_full_sentence and i != nr_sentences - 1
+        last_was_split = is_full_sentence and i != nr_clauses - 1
         if last_was_split :
             transitional = get_word("transitionals")
             result += ", " + transitional + " "
@@ -575,15 +595,15 @@ for keyword, value in opts :
     if keyword == "--adjectives" :
         mean_nr_adjectives = int(value)
     elif keyword == "-n" :
-        sentences_per_paragraph = int(value)
-        if sentences_per_paragraph < 1 :
-            raise getopt.GetoptError("must have at least one sentence per paragraph")
+        clauses_per_paragraph = int(value)
+        if clauses_per_paragraph < 1 :
+            raise getopt.GetoptError("must have at least one clause per paragraph")
         #end if
     elif keyword == "--nouns" :
         mean_nr_nouns = int(value)
     elif keyword == "-p" :
         nr_paragraphs = int(value)
-        if sentences_per_paragraph < 1 :
+        if clauses_per_paragraph < 1 :
             raise getopt.GetoptError("must have at least one paragraph")
         #end if
     elif keyword == "-s" :
@@ -604,6 +624,6 @@ if ranseed != None :
 #end if
 
 for i in range(nr_paragraphs) :
-    sys.stdout.write(create_ipsum(sentences_per_paragraph))
+    sys.stdout.write(create_ipsum(clauses_per_paragraph))
     sys.stdout.write("\n\n")
 #end for
