@@ -585,45 +585,49 @@ def create_ipsum(nr_clauses) :
 
 ranseed = None
 
-opts, args = getopt.getopt \
-  (
-    sys.argv[1:],
-    "n:p:s:",
-    ["adjectives=", "nouns=", "seed="]
-  )
-for keyword, value in opts :
-    if keyword == "--adjectives" :
-        mean_nr_adjectives = int(value)
-    elif keyword == "-n" :
-        clauses_per_paragraph = int(value)
-        if clauses_per_paragraph < 1 :
-            raise getopt.GetoptError("must have at least one clause per paragraph")
+if __name__ == "__main__" :
+
+    opts, args = getopt.getopt \
+      (
+        sys.argv[1:],
+        "n:p:s:",
+        ["adjectives=", "nouns=", "seed="]
+      )
+    for keyword, value in opts :
+        if keyword == "--adjectives" :
+            mean_nr_adjectives = int(value)
+        elif keyword == "-n" :
+            clauses_per_paragraph = int(value)
+            if clauses_per_paragraph < 1 :
+                raise getopt.GetoptError("must have at least one clause per paragraph")
+            #end if
+        elif keyword == "--nouns" :
+            mean_nr_nouns = int(value)
+        elif keyword == "-p" :
+            nr_paragraphs = int(value)
+            if clauses_per_paragraph < 1 :
+                raise getopt.GetoptError("must have at least one paragraph")
+            #end if
+        elif keyword == "-s" :
+            split_sentence_prob = float(value)
+            if split_sentence_prob < 0 or split_sentence_prob > 1 :
+                raise getopt.GetoptError("probability of split sentence must be in [0, 1]")
+            #end if
+        elif keyword == "--seed" :
+            ranseed = int(value)
         #end if
-    elif keyword == "--nouns" :
-        mean_nr_nouns = int(value)
-    elif keyword == "-p" :
-        nr_paragraphs = int(value)
-        if clauses_per_paragraph < 1 :
-            raise getopt.GetoptError("must have at least one paragraph")
-        #end if
-    elif keyword == "-s" :
-        split_sentence_prob = float(value)
-        if split_sentence_prob < 0 or split_sentence_prob > 1 :
-            raise getopt.GetoptError("probability of split sentence must be in [0, 1]")
-        #end if
-    elif keyword == "--seed" :
-        ranseed = int(value)
+    #end for
+    if len(args) != 0 :
+        raise getopt.GetoptError("no args expected")
     #end if
-#end for
-if len(args) != 0 :
-    raise getopt.GetoptError("no args expected")
-#end if
 
-if ranseed != None :
-    random.seed(ranseed)
-#end if
+    if ranseed != None :
+        random.seed(ranseed)
+    #end if
 
-for i in range(nr_paragraphs) :
-    sys.stdout.write(create_ipsum(clauses_per_paragraph))
-    sys.stdout.write("\n\n")
-#end for
+    for i in range(nr_paragraphs) :
+        sys.stdout.write(create_ipsum(clauses_per_paragraph))
+        sys.stdout.write("\n\n")
+    #end for
+
+#end if
